@@ -58,39 +58,74 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Center(child: Text(widget.title)),
       ),
       body: todoList != null
-          ? ListView.builder(
-              itemBuilder: (context, index) {
-                Todo todoItems = todoList.todos[index];
+          ? ReorderableListView(
+              children: todoList.todos.map((todo) {
                 return Dismissible(
                   child: ListTile(
                     leading: Checkbox(
                       onChanged: (bool value) {
                         setState(() {
-                          todoItems.finished = value;
+                          todo.finished = value;
                           _saveToSharedPref();
                         });
                       },
-                      value: todoItems.finished,
+                      value: todo.finished,
                     ),
                     title: Text(
-                      todoItems.content,
-                      style: TextStyle(decoration: todoItems.finished ? TextDecoration.lineThrough : null),
+                      todo.content,
+                      style: TextStyle(decoration: todo.finished ? TextDecoration.lineThrough : null),
                     ),
                   ),
                   key: UniqueKey(),
                   onDismissed: (ddd) {
                     setState(() {
-                      todoList.todos.removeAt(index);
+                      todoList.todos.remove(todo);
                       _saveToSharedPref();
                     });
-                    Scaffold.of(context).showSnackBar(SnackBar(content: Text("${todoItems.content} dismissed")));
+                    Scaffold.of(context).showSnackBar(SnackBar(content: Text("${todo.content} dismissed")));
                   },
+                  secondaryBackground: Container(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: <Widget>[
+                        Icon(
+                          Icons.delete,
+                          color: Colors.white,
+                        ),
+                        SizedBox(
+                          width: 20,
+                        ),
+                      ],
+                    ),
+                    color: Colors.red,
+                  ),
                   background: Container(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: <Widget>[
+                        SizedBox(
+                          width: 20,
+                        ),
+                        Icon(
+                          Icons.delete,
+                          color: Colors.white,
+                        ),
+                      ],
+                    ),
                     color: Colors.red,
                   ),
                 );
+              }).toList(),
+              onReorder: (int oldIndex, int newIndex) {
+                setState(() {
+                  if (newIndex > oldIndex) {
+                    newIndex -= 1;
+                  }
+                  var item = todoList.todos.removeAt(oldIndex);
+                  todoList.todos.insert(newIndex, item);
+                  _saveToSharedPref();
+                });
               },
-              itemCount: todoList.todos.length,
             )
           : Center(
               child: Text('Loading...'),
