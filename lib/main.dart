@@ -71,6 +71,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       },
                       value: todo.finished,
                     ),
+                    trailing: Icon(Icons.drag_handle),
                     title: Text(
                       todo.content,
                       style: TextStyle(decoration: todo.finished ? TextDecoration.lineThrough : null),
