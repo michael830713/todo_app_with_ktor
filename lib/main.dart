@@ -4,6 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:todo_app_with_ktor/custom_listtile.dart';
+import 'package:todo_app_with_ktor/todo.dart';
+
+import 'delete_background.dart';
 
 void main() => runApp(MyApp());
 Logger logger = Logger();
@@ -32,6 +36,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  TodoList todoList;
+
   void _fetchSharedPref() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() => todoList =
@@ -50,7 +56,55 @@ class _MyHomePageState extends State<MyHomePage> {
     _saveToSharedPref();
   }
 
-  TodoList todoList;
+  void _reorderList(int newIndex, int oldIndex) {
+    if (newIndex > oldIndex) {
+      newIndex -= 1;
+    }
+    var item = todoList.todos.removeAt(oldIndex);
+    todoList.todos.insert(newIndex, item);
+    _saveToSharedPref();
+  }
+
+  void _addNewTodo(BuildContext context) {
+    TextEditingController textEditingController = TextEditingController();
+    showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+              title: Text('new TODO'),
+              content: TextField(
+                controller: textEditingController,
+                decoration: InputDecoration(hintText: 'Enter here'),
+              ),
+              actions: <Widget>[
+                new FlatButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: new Text(
+                    "取消",
+                    style: TextStyle(color: Colors.black),
+                  ),
+                ),
+                new RaisedButton(
+                  color: Colors.yellow,
+                  onPressed: () {
+                    setState(() {
+                      if (textEditingController.text.isNotEmpty) {
+                        todoList.todos.add(Todo(
+                            content: textEditingController.text,
+                            dateTime: DateFormat("yyyy-MM-dd HH:mm:ss").format(DateTime.now()).toString()));
+                        _saveToSharedPref();
+                      }
+                    });
+                    Navigator.of(context).pop();
+                  },
+                  child: new Text(
+                    "確認",
+                    style: TextStyle(color: Colors.black),
+                  ),
+                ),
+              ]);
+        });
+  }
 
   @override
   void didChangeDependencies() {
@@ -66,9 +120,7 @@ class _MyHomePageState extends State<MyHomePage> {
         actions: <Widget>[
           IconButton(
             icon: Icon(Icons.check_circle_outline),
-            onPressed: () {
-              _hideDoneTodo(hideDone: !todoList.hideDoneTodo);
-            },
+            onPressed: () => _hideDoneTodo(hideDone: !todoList.hideDoneTodo),
           )
         ],
         centerTitle: true,
@@ -77,180 +129,31 @@ class _MyHomePageState extends State<MyHomePage> {
       body: todoList != null
           ? ReorderableListView(
               children: todoList.todosForDisplay.map((todo) {
-                return Dismissible(
-                  child: ListTile(
-                    leading: Checkbox(
-                      onChanged: (bool value) {
-                        setState(() {
-                          todo.finished = value;
-                          _saveToSharedPref();
-                        });
-                      },
-                      value: todo.finished,
-                    ),
-                    trailing: Icon(Icons.drag_handle),
-                    title: Text(
-                      todo.content,
-                      style: TextStyle(decoration: todo.finished ? TextDecoration.lineThrough : null),
-                    ),
-                    subtitle: Text(todo.dateTime),
-                  ),
+                return CustomListTile(
                   key: UniqueKey(),
-                  onDismissed: (ddd) {
-                    setState(() {
-                      todoList.todos.remove(todo);
-                      _saveToSharedPref();
-                    });
-                    Scaffold.of(context).showSnackBar(SnackBar(content: Text("${todo.content} dismissed")));
-                  },
-                  secondaryBackground: Container(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: <Widget>[
-                        Icon(
-                          Icons.delete,
-                          color: Colors.white,
-                        ),
-                        SizedBox(
-                          width: 20,
-                        ),
-                      ],
-                    ),
-                    color: Colors.red,
-                  ),
-                  background: Container(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: <Widget>[
-                        SizedBox(
-                          width: 20,
-                        ),
-                        Icon(
-                          Icons.delete,
-                          color: Colors.white,
-                        ),
-                      ],
-                    ),
-                    color: Colors.red,
-                  ),
+                  todo: todo,
+                  onDismissed: () => setState(() {
+                    todoList.todos.remove(todo);
+                    _saveToSharedPref();
+                  }),
+                  checkBoxOnChanged: (value) => setState(() {
+                    todo.finished = value;
+                    _saveToSharedPref();
+                  }),
                 );
               }).toList(),
-              onReorder: (int oldIndex, int newIndex) {
-                setState(() {
-                  if (newIndex > oldIndex) {
-                    newIndex -= 1;
-                  }
-                  var item = todoList.todos.removeAt(oldIndex);
-                  todoList.todos.insert(newIndex, item);
-                  _saveToSharedPref();
-                });
-              },
+              onReorder: (int oldIndex, int newIndex) => setState(() => _reorderList(newIndex, oldIndex)),
             )
           : Center(
               child: Text('Loading...'),
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          TextEditingController textEditingController = TextEditingController();
-          showDialog(
-              context: context,
-              builder: (context) {
-                return AlertDialog(
-                    title: Text('new TODO'),
-                    content: TextField(
-                      controller: textEditingController,
-                      decoration: InputDecoration(hintText: 'Enter here'),
-                    ),
-                    actions: <Widget>[
-                      new FlatButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        child: new Text(
-                          "取消",
-                          style: TextStyle(color: Colors.black),
-                        ),
-                      ),
-                      new RaisedButton(
-                        color: Colors.yellow,
-                        onPressed: () {
-                          setState(() {
-                            if (textEditingController.text.isNotEmpty) {
-                              todoList.todos.add(Todo(
-                                  content: textEditingController.text,
-                                  dateTime: DateFormat("yyyy-MM-dd HH:mm:ss").format(DateTime.now()).toString()));
-                              _saveToSharedPref();
-                            }
-                          });
-                          Navigator.of(context).pop();
-                        },
-                        child: new Text(
-                          "確認",
-                          style: TextStyle(color: Colors.black),
-                        ),
-                      ),
-                    ]);
-              });
+          _addNewTodo(context);
         },
         tooltip: 'Increment',
         child: Icon(Icons.add),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
-  }
-}
-
-class TodoList {
-  List<Todo> todos = [];
-  bool hideDoneTodo = false;
-
-  List<Todo> get todosForDisplay => hideDoneTodo ? shrinkList : todos;
-
-  List<Todo> get shrinkList => todos.where((todo) => !todo.finished).toList();
-
-  TodoList();
-
-  TodoList.fromJson(Map<String, dynamic> json) {
-    if (json['todos'] != null) {
-      todos = new List<Todo>();
-      json['todos'].forEach((v) {
-        todos.add(new Todo.fromJson(v));
-      });
-    }
-    if (json['hideDoneTodo'] != null) {
-      hideDoneTodo = json['hideDoneTodo'];
-    }
-  }
-
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    if (this.todos != null) {
-      data['todos'] = this.todos.map((v) => v.toJson()).toList();
-    }
-    if (this.hideDoneTodo != null) {
-      data['hideDoneTodo'] = hideDoneTodo;
-    }
-    return data;
-  }
-}
-
-class Todo {
-  String content;
-  bool finished;
-  String dateTime;
-
-  Todo({this.content, this.finished = false, this.dateTime});
-
-  Todo.fromJson(Map<String, dynamic> json) {
-    content = json['content'];
-    finished = json['finished'];
-    dateTime = json['dateTime'];
-  }
-
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['content'] = this.content;
-    data['finished'] = this.finished;
-    data['dateTime'] = this.dateTime;
-    return data;
   }
 }
