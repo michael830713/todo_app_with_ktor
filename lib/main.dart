@@ -42,6 +42,13 @@ class _MyHomePageState extends State<MyHomePage> {
     prefs.setString('todoList', jsonEncode(todoList.toJson()));
   }
 
+  void _hideDoneTodo({bool hideDone}) {
+    setState(() {
+      return todoList.hideDoneTodo = hideDone;
+    });
+    _saveToSharedPref();
+  }
+
   TodoList todoList;
 
   @override
@@ -51,7 +58,6 @@ class _MyHomePageState extends State<MyHomePage> {
     super.didChangeDependencies();
   }
 
-  void _hideDoneTodo({bool hideDone}) => setState(() => todoList.hideDoneTodo = hideDone);
   @override
   Widget build(BuildContext context) {
     return Scaffold(
