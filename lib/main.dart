@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -92,6 +93,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       todo.content,
                       style: TextStyle(decoration: todo.finished ? TextDecoration.lineThrough : null),
                     ),
+                    subtitle: Text(todo.dateTime),
                   ),
                   key: UniqueKey(),
                   onDismissed: (ddd) {
@@ -174,7 +176,9 @@ class _MyHomePageState extends State<MyHomePage> {
                         onPressed: () {
                           setState(() {
                             if (textEditingController.text.isNotEmpty) {
-                              todoList.todos.add(Todo(content: textEditingController.text));
+                              todoList.todos.add(Todo(
+                                  content: textEditingController.text,
+                                  dateTime: DateFormat("yyyy-MM-dd HH:mm:ss").format(DateTime.now()).toString()));
                               _saveToSharedPref();
                             }
                           });
@@ -232,18 +236,21 @@ class TodoList {
 class Todo {
   String content;
   bool finished;
+  String dateTime;
 
-  Todo({this.content, this.finished = false});
+  Todo({this.content, this.finished = false, this.dateTime});
 
   Todo.fromJson(Map<String, dynamic> json) {
     content = json['content'];
     finished = json['finished'];
+    dateTime = json['dateTime'];
   }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
     data['content'] = this.content;
     data['finished'] = this.finished;
+    data['dateTime'] = this.dateTime;
     return data;
   }
 }
