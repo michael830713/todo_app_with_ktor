@@ -47,19 +47,29 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void didChangeDependencies() {
     _fetchSharedPref();
+
     super.didChangeDependencies();
   }
 
+  void _hideDoneTodo({bool hideDone}) => setState(() => todoList.hideDoneTodo = hideDone);
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        actions: <Widget>[
+          IconButton(
+            icon: Icon(Icons.check_circle_outline),
+            onPressed: () {
+              _hideDoneTodo(hideDone: !todoList.hideDoneTodo);
+            },
+          )
+        ],
         centerTitle: true,
         title: Center(child: Text(widget.title)),
       ),
       body: todoList != null
           ? ReorderableListView(
-              children: todoList.todos.map((todo) {
+              children: todoList.todosForDisplay.map((todo) {
                 return Dismissible(
                   child: ListTile(
                     leading: Checkbox(
@@ -181,6 +191,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
 class TodoList {
   List<Todo> todos = [];
+  bool hideDoneTodo = false;
+
+  List<Todo> get todosForDisplay => hideDoneTodo ? shrinkList : todos;
+
+  List<Todo> get shrinkList => todos.where((todo) => !todo.finished).toList();
 
   TodoList();
 
@@ -191,12 +206,18 @@ class TodoList {
         todos.add(new Todo.fromJson(v));
       });
     }
+    if (json['hideDoneTodo'] != null) {
+      hideDoneTodo = json['hideDoneTodo'];
+    }
   }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
     if (this.todos != null) {
       data['todos'] = this.todos.map((v) => v.toJson()).toList();
+    }
+    if (this.hideDoneTodo != null) {
+      data['hideDoneTodo'] = hideDoneTodo;
     }
     return data;
   }
