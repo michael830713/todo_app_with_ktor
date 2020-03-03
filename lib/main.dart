@@ -118,9 +118,17 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       appBar: AppBar(
         actions: <Widget>[
-          IconButton(
-            icon: Icon(Icons.check_circle_outline),
-            onPressed: () => _hideDoneTodo(hideDone: !todoList.hideDoneTodo),
+          Builder(
+            builder: (BuildContext context) => IconButton(
+              icon: Icon(Icons.check_circle_outline),
+              onPressed: () {
+                Scaffold.of(context).showSnackBar(SnackBar(
+                  content: Text('${todoList.hideDoneTodo ? '顯示' : '隱藏'}完成事項'),
+                  duration: Duration(seconds: 1),
+                ));
+                _hideDoneTodo(hideDone: !todoList.hideDoneTodo);
+              },
+            ),
           )
         ],
         centerTitle: true,
