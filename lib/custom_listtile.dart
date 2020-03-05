@@ -25,7 +25,7 @@ class CustomListTile extends StatelessWidget {
           todo.content,
           style: TextStyle(decoration: todo.finished ? TextDecoration.lineThrough : null),
         ),
-        subtitle: Text(todo.dateTime),
+        subtitle: Text(todo.dateTime ?? ''),
       ),
       key: key,
       onDismissed: (ddd) {
