@@ -1,13 +1,9 @@
 import 'dart:convert';
-
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:todo_app_with_ktor/custom_listtile.dart';
-import 'package:todo_app_with_ktor/todo.dart';
-
-import 'delete_background.dart';
+import 'package:todo_app_with_ktor/todo_api.dart';
 
 void main() => runApp(MyApp());
 Logger logger = Logger();
@@ -36,79 +32,19 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  TodoList todoList;
+  TodoResponse todoList;
 
-  void _fetchSharedPref() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() => todoList =
-        prefs.getString('todoList') != null ? TodoList.fromJson(jsonDecode(prefs.getString('todoList'))) : TodoList());
-  }
-
-  void _saveToSharedPref() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setString('todoList', jsonEncode(todoList.toJson()));
-  }
-
-  void _hideDoneTodo({bool hideDone}) {
-    setState(() {
-      return todoList.hideDoneTodo = hideDone;
-    });
-    _saveToSharedPref();
-  }
-
-  void _reorderList(int newIndex, int oldIndex) {
-    if (newIndex > oldIndex) {
-      newIndex -= 1;
-    }
-    var item = todoList.todos.removeAt(oldIndex);
-    todoList.todos.insert(newIndex, item);
-    _saveToSharedPref();
-  }
-
-  void _addNewTodo(BuildContext context) {
-    TextEditingController textEditingController = TextEditingController();
-    showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-              title: Text('new TODO'),
-              content: TextField(
-                controller: textEditingController,
-                decoration: InputDecoration(hintText: 'Enter here'),
-              ),
-              actions: <Widget>[
-                new FlatButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: new Text(
-                    "取消",
-                    style: TextStyle(color: Colors.black),
-                  ),
-                ),
-                new RaisedButton(
-                  color: Colors.yellow,
-                  onPressed: () {
-                    setState(() {
-                      if (textEditingController.text.isNotEmpty) {
-                        todoList.todos.add(Todo(
-                            content: textEditingController.text,
-                            dateTime: DateFormat("yyyy-MM-dd HH:mm:ss").format(DateTime.now()).toString()));
-                        _saveToSharedPref();
-                      }
-                    });
-                    Navigator.of(context).pop();
-                  },
-                  child: new Text(
-                    "確認",
-                    style: TextStyle(color: Colors.black),
-                  ),
-                ),
-              ]);
-        });
+  void _fetchFromApi() async {
+    var url = 'https://ktor-gcp-practice1.appspot.com/api/tasks';
+    var response = await http.get(url);
+    if (response.statusCode == 200) setState(() => todoList = TodoResponse.fromJson(jsonDecode(response.body)));
+    print('Response status: ${response.statusCode}');
+    print('Response body: ${response.body}');
   }
 
   @override
   void didChangeDependencies() {
-    _fetchSharedPref();
+    _fetchFromApi();
 
     super.didChangeDependencies();
   }
@@ -117,51 +53,20 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        actions: <Widget>[
-          Builder(
-            builder: (BuildContext context) => IconButton(
-              icon: Icon(Icons.check_circle_outline),
-              onPressed: () {
-                Scaffold.of(context).showSnackBar(SnackBar(
-                  content: Text('${todoList.hideDoneTodo ? '顯示' : '隱藏'}完成事項'),
-                  duration: Duration(seconds: 1),
-                ));
-                _hideDoneTodo(hideDone: !todoList.hideDoneTodo);
-              },
-            ),
-          )
-        ],
         centerTitle: true,
         title: Center(child: Text(widget.title)),
       ),
       body: todoList != null
-          ? ReorderableListView(
-              children: todoList.todosForDisplay.map((todo) {
+          ? ListView.builder(
+              itemBuilder: (BuildContext context, int index) {
                 return CustomListTile(
-                  key: UniqueKey(),
-                  todo: todo,
-                  onDismissed: () => setState(() {
-                    todoList.todos.remove(todo);
-                    _saveToSharedPref();
-                  }),
-                  checkBoxOnChanged: (value) => setState(() {
-                    todo.finished = value;
-                    _saveToSharedPref();
-                  }),
+                  todo: todoList.data[index],
                 );
-              }).toList(),
-              onReorder: (int oldIndex, int newIndex) => setState(() => _reorderList(newIndex, oldIndex)),
+              },
             )
           : Center(
-              child: Text('Loading...'),
+              child: CircularProgressIndicator(),
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _addNewTodo(context);
-        },
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
