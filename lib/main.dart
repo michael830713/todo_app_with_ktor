@@ -58,6 +58,7 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: todoList != null
           ? ListView.builder(
+              itemCount: todoList.data.length,
               itemBuilder: (BuildContext context, int index) {
                 return CustomListTile(
                   todo: todoList.data[index],
