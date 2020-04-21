@@ -36,10 +36,14 @@ workflows:
           --ks-key-alias androiddebugkey \
           --key-pass android \
           --pattern 'build/**/outputs/**/*.aab'
+      - find . -name "Podfile" -execdir pod install \;
+      - flutter build ios --debug --no-codesign
     artifacts:
       - build/**/outputs/**/*.apk
       - build/**/outputs/**/*.aab
       - build/**/outputs/**/mapping.txt
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
       - flutter_drive.log
     publishing:
       email:
