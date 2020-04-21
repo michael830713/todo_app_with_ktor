@@ -27,6 +27,7 @@ workflows:
         echo "flutter.sdk=$HOME/programs/flutter" > "$FCI_BUILD_DIR/android/local.properties"
       - flutter packages pub get
       - flutter drive --target=test_driver/app.dart
+      - flutter drive --target=test_driver/app2.dart
       - flutter build appbundle --debug
       - |
         # generate universal apk signed with debug key
