@@ -8,6 +8,13 @@ workflows:
       flutter: stable
       xcode: latest
       cocoapods: default
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: '*'
+          include: true
+          source: true
     scripts:
       - flutter emulators --launch emulator
       - flutter packages pub get
