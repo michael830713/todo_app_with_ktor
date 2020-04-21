@@ -19,7 +19,6 @@ workflows:
       - flutter emulators --launch emulator
       - flutter packages pub get
       - flutter drive --target=test_driver/app2.dart
-      - flutter drive --target=test_driver/app.dart
     artifacts:
       - flutter_drive.log
     publishing:
