@@ -9,7 +9,7 @@ void main() {
     driver = await FlutterDriver.connect();
   });
 
-  test('check flutter driver health', () async {
+  test('check flutter app2 driver health', () async {
     final health = await driver.checkHealth();
     expect(health.status, HealthStatus.ok);
   });
