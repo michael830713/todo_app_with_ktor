@@ -61,6 +61,11 @@ class _MyHomePageState extends State<MyHomePage> {
               itemCount: todoList.data.length,
               itemBuilder: (BuildContext context, int index) {
                 return CustomListTile(
+                  checkBoxOnChanged: (value) {
+                    setState(() {
+                      todoList.data[index].completed = value;
+                    });
+                  },
                   todo: todoList.data[index],
                 );
               },
